@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Business Receipt Tracker</title>
+<style>
+:root{--bg:#f4f6f8;--panel:#fff;--ink:#17212b;--muted:#667482;--line:#e3e8ed;--accent:#1e6b55;--accent2:#e8f3ef;--danger:#a73535;--shadow:0 8px 24px rgba(20,35,45,.06)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:#132b27;color:white;padding:26px max(20px,calc((100vw - 1180px)/2))}
+header .eyebrow{color:#b8d8cc;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:700}
+h1{margin:4px 0;font-size:27px}header p{margin:4px 0 0;color:#d2e2dc}
+main{max-width:1180px;margin:24px auto;padding:0 18px 48px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.card{padding:16px}.card span{display:block;color:var(--muted);font-size:12px}.card strong{font-size:23px;display:block;margin-top:4px}
+.layout{display:grid;grid-template-columns:370px 1fr;gap:18px;align-items:start}
+.panel{padding:18px}.panel h2{font-size:17px;margin:0 0 14px}
+form{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.field{display:flex;flex-direction:column;gap:5px}.wide{grid-column:1/-1}
+label{font-size:12px;color:#465461;font-weight:650}
+input,select,textarea{width:100%;padding:10px 11px;border:1px solid #d7dfe5;border-radius:8px;background:#fff;color:var(--ink);font:inherit;font-size:14px}
+input:focus,select:focus,textarea:focus{outline:2px solid #b9d9cd;border-color:var(--accent)}
+input[type=file]{padding:8px;font-size:12px}input[type=checkbox]{width:auto}
+small,.hint{color:var(--muted);font-size:11px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+button{border:0;border-radius:8px;padding:10px 13px;font-weight:700;cursor:pointer;font-size:13px}
+.primary{background:var(--accent);color:#fff}.secondary{background:var(--accent2);color:var(--accent)}.plain{background:#eef1f4;color:#34414c}.delete{background:#fff0f0;color:var(--danger)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar input{max-width:220px}.toolbar select{max-width:190px}
+.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:700px;font-size:13px}
+th,td{text-align:left;padding:11px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+td strong{display:block}.sub{color:var(--muted);font-size:11px}
+.receipt-link{color:var(--accent);font-weight:700;text-decoration:none}
+.empty{text-align:center;color:var(--muted);padding:28px 10px}
+.notice{margin-top:14px;padding:12px;background:#f7f8fa;border-radius:9px;color:#56636e;font-size:12px}
+.tag{display:inline-block;padding:3px 7px;border-radius:20px;background:#f0f3f5;color:#465461;font-size:11px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:460px){form{grid-template-columns:1fr}.wide{grid-column:auto}.card strong{font-size:20px}header{padding:22px 18px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Business admin</div>
+  <h1>Receipt & Expense Tracker</h1>
+  <p>Keep purchase details and receipt files together in one place.</p>
+</header>
+<main>
+  <section class="cards">
+    <div class="card"><span>Total recorded spend</span><strong id="total">£0.00</strong></div>
+    <div class="card"><span>Potentially allowable* spend</span><strong id="allowable">£0.00</strong></div>
+    <div class="card"><span>Receipts saved</span><strong id="count">0</strong></div>
+    <div class="card"><span>VAT recorded</span><strong id="vat">£0.00</strong></div>
+  </section>
+  <div class="layout">
+    <section class="panel">
+      <h2 id="formTitle">Add an expense</h2>
+      <form id="expenseForm">
+        <input type="hidden" id="editId">
+        <div class="field"><label for="date">Purchase date *</label><input id="date" type="date" required></div>
+        <div class="field"><label for="receiptNo">Receipt / invoice number</label><input id="receiptNo" placeholder="e.g. INV-1042"></div>
+        <div class="field wide"><label for="supplier">Supplier / business *</label><input id="supplier" required placeholder="e.g. Apple, Google, petrol station"></div>
+        <div class="field wide"><label for="description">What did you buy? *</label><input id="description" required placeholder="e.g. Business iPhone"></div>
+        <div class="field"><label for="amount">Total paid (£) *</label><input id="amount" type="number" min="0" step="0.01" required placeholder="0.00"></div>
+        <div class="field"><label for="vatAmount">VAT amount (£)</label><input id="vatAmount" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label for="method">Payment method</label><select id="method"><option value="">Choose…</option><option>Business debit card</option><option>Personal debit card</option><option>Credit card</option><option>Cash</option><option>Bank transfer</option><option>Other</option></select></div>
+        <div class="field"><label for="cardLast4">Card last 4 digits</label><input id="cardLast4" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="1234"></div>
+        <div class="field"><label for="category">Category</label><select id="category"><option>Equipment</option><option>Phone & internet</option><option>Software & subscriptions</option><option>Advertising & marketing</option><option>Website, domain & hosting</option><option>Travel & mileage</option><option>Office supplies</option><option>Professional fees</option><option>Insurance</option><option>Other</option></select></div>
+        <div class="field"><label for="businessUse">Business use (%)</label><input id="businessUse" type="number" min="0" max="100" step="1" value="100"></div>
+        <div class="field"><label for="taxStatus">Tax treatment (your review)</label><select id="taxStatus"><option value="Review needed">Review needed</option><option value="Potentially allowable">Potentially allowable</option><option value="Not allowable">Not allowable</option></select></div>
+        <div class="field"><label for="receipt">Receipt file (photo / PDF)</label><input id="receipt" type="file" accept="image/*,.pdf"></div>
+        <div class="field wide"><label for="notes">Notes</label><textarea id="notes" rows="2" placeholder="Anything useful to remember…"></textarea></div>
+        <div class="field wide hint">* Required fields. Upload a clear photo or PDF of the receipt.</div>
+        <div class="field wide actions">
+          <button class="primary" type="submit" id="saveBtn">Save expense</button>
+          <button class="plain" type="button" id="resetBtn">Clear form</button>
+        </div>
+      </form>
+      <div class="notice">Your entries and attached receipt files are stored in this browser on this device. They are not automatically backed up or synced to another device. Export a backup regularly.</div>
+    </section>
+    <section class="panel">
+      <h2>Your expenses</h2>
+      <div class="toolbar">
+        <input id="search" placeholder="Search supplier, item, receipt…">
+        <select id="filterCategory"><option value="">All categories</option><option>Equipment</option><option>Phone & internet</option><option>Software & subscriptions</option><option>Advertising & marketing</option><option>Website, domain & hosting</option><option>Travel & mileage</option><option>Office supplies</option><option>Professional fees</option><option>Insurance</option><option>Other</option></select>
+        <button class="secondary" id="exportCsv" type="button">Export CSV</button>
+        <button class="plain" id="backup" type="button">Backup data</button>
+        <label class="plain" style="padding:9px 12px;border-radius:8px;cursor:pointer">Restore backup<input id="restore" type="file" accept=".json,application/json" hidden></label>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Date / receipt no.</th><th>Supplier / item</th><th>Category</th><th>Amount</th><th>Payment</th><th>Receipt</th><th>Actions</th></tr></thead>
+        <tbody id="rows"></tbody></table>
+        <div id="empty" class="empty">No expenses yet. Add your first receipt using the form.</div>
+      </div>
+      <div class="notice">* “Potentially allowable” is only a tracking label, not a tax decision. Check business purpose, private use, capital allowances and VAT rules with HMRC guidance or your accountant.</div>
+    </section>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const DB = 'businessReceiptTracker_v1';
+let expenses = [];
+try { expenses = JSON.parse(localStorage.getItem(DB) || '[]'); } catch(e) { expenses = []; }
+const money = n => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(Number(n)||0);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function persist(){ try { localStorage.setItem(DB,JSON.stringify(expenses)); } catch(e){ alert('Browser storage is full. Export a backup and consider using smaller receipt files.'); } render(); }
+function reset(){ $('expenseForm').reset(); $('editId').value=''; $('date').value=new Date().toISOString().slice(0,10); $('businessUse').value=100; $('formTitle').textContent='Add an expense'; $('saveBtn').textContent='Save expense'; }
+function render(){
+ const total=expenses.reduce((s,e)=>s+Number(e.amount||0),0);
+ const allowable=expenses.filter(e=>e.taxStatus==='Potentially allowable').reduce((s,e)=>s+Number(e.amount||0)*Number(e.businessUse||0)/100,0);
+ const vat=expenses.reduce((s,e)=>s+Number(e.vatAmount||0),0);
+ $('total').textContent=money(total); $('allowable').textContent=money(allowable); $('vat').textContent=money(vat); $('count').textContent=expenses.length;
+ const q=$('search').value.toLowerCase(), cat=$('filterCategory').value;
+ const filtered=expenses.filter(e=>(!cat||e.category===cat)&&(!q||[e.supplier,e.description,e.receiptNo,e.notes,e.category].join(' ').toLowerCase().includes(q))).sort((a,b)=>b.date.localeCompare(a.date));
+ $('rows').innerHTML=filtered.map(e=>`<tr>
+ <td><strong>${esc(e.date)}</strong><span class="sub">${esc(e.receiptNo||'No receipt number')}</span></td>
+ <td><strong>${esc(e.supplier)}</strong><span class="sub">${esc(e.description)}</span><br><span class="tag">${esc(e.taxStatus)}</span></td>
+ <td>${esc(e.category)}<span class="sub"><br>${Number(e.businessUse)}% business use</span></td>
+ <td><strong>${money(e.amount)}</strong>${Number(e.vatAmount)>0?`<span class="sub">VAT ${money(e.vatAmount)}</span>`:''}</td>
+ <td>${esc(e.method||'—')}<span class="sub"><br>${e.cardLast4?'•••• '+esc(e.cardLast4):''}</span></td>
+ <td>${e.fileData?`<a class="receipt-link" href="${e.fileData}" download="${esc(e.fileName||'receipt')}">View / save</a>`:'—'}</td>
+ <td><button class="plain" onclick="editExpense('${e.id}')">Edit</button> <button class="delete" onclick="deleteExpense('${e.id}')">Delete</button></td>
+ </tr>`).join('');
+ $('empty').style.display=filtered.length?'none':'block';
+}
+$('expenseForm').addEventListener('submit',async ev=>{
+ ev.preventDefault();
+ const id=$('editId').value||crypto.randomUUID();
+ const old=expenses.find(e=>e.id===id)||{};
+ const file=$('receipt').files[0];
+ let fileData=old.fileData||'', fileName=old.fileName||'';
+ if(file){ if(file.size>4*1024*1024){alert('Please use a receipt file smaller than 4 MB to help prevent browser storage filling up.');return;} fileData=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);}); fileName=file.name; }
+ const entry={id,date:$('date').value,receiptNo:$('receiptNo').value.trim(),supplier:$('supplier').value.trim(),description:$('description').value.trim(),amount:Number($('amount').value),vatAmount:Number($('vatAmount').value||0),method:$('method').value,cardLast4:$('cardLast4').value,category:$('category').value,businessUse:Number($('businessUse').value),taxStatus:$('taxStatus').value,notes:$('notes').value,fileData,fileName};
+ const i=expenses.findIndex(e=>e.id===id); if(i>=0)expenses[i]=entry;else expenses.push(entry);
+ persist();reset();
+});
+window.editExpense=id=>{const e=expenses.find(x=>x.id===id);if(!e)return;['date','receiptNo','supplier','description','amount','vatAmount','method','cardLast4','category','businessUse','taxStatus','notes'].forEach(k=>$(k).value=e[k]??'');$('editId').value=id;$('formTitle').textContent='Edit expense';$('saveBtn').textContent='Update expense';window.scrollTo({top:0,behavior:'smooth'});};
+window.deleteExpense=id=>{if(confirm('Delete this expense and its saved receipt?')){expenses=expenses.filter(e=>e.id!==id);persist();}};
+$('resetBtn').onclick=reset;$('search').oninput=render;$('filterCategory').onchange=render;
+$('exportCsv').onclick=()=>{const cols=['date','receiptNo','supplier','description','amount','vatAmount','method','cardLast4','category','businessUse','taxStatus','notes','fileName'];const csv=[cols.join(','),...expenses.map(e=>cols.map(k=>'"'+String(e[k]??'').replace(/"/g,'""')+'"').join(','))].join('\r\n');download(new Blob([csv],{type:'text/csv;charset=utf-8'}),'business-expenses.csv');};
+$('backup').onclick=()=>download(new Blob([JSON.stringify(expenses,null,2)],{type:'application/json'}),'receipt-tracker-backup.json');
+$('restore').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error();if(confirm('Replace the current tracker data with this backup?')){expenses=data;persist();}}catch(e){alert('That backup file could not be read.');}ev.target.value='';};
+function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
+reset();render();
+</script>
+</body>
+</html>
